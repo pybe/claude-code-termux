@@ -1,0 +1,60 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# cl — self-healing Claude Code launcher for Termux
+# Checks wrapper integrity, rebuilds if needed, then runs claude
+
+CLAUDE_BIN="$HOME/.local/bin/claude-bin"
+CLAUDE_WRAPPER="$HOME/.local/bin/claude"
+LOADER_DIR="$HOME/bun-termux-loader"
+GCS_BUCKET="https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
+
+is_script() { head -c 2 "$1" 2>/dev/null | grep -q '#!'; }
+
+rebuild() {
+    local SRC="$1"
+    echo "[cl] Rebuilding bun-termux-loader wrapper..."
+    (cd "$LOADER_DIR" && python3 build.py "$SRC" "$CLAUDE_BIN")
+    rm -rf "${TMPDIR:-$PREFIX/tmp}/bun-termux-cache"
+    echo "[cl] Cleared bun cache"
+}
+
+install_proot_wrapper() {
+    cat > "$CLAUDE_WRAPPER" << 'WRAPPER'
+#!/data/data/com.termux/files/usr/bin/bash
+exec proot --bind=$PREFIX/tmp:/tmp --bind=$PREFIX/bin/bash:/bin/sh ~/.local/bin/claude-bin "$@"
+WRAPPER
+    chmod +x "$CLAUDE_WRAPPER"
+}
+
+# Check if the wrapper script has been overwritten by an auto-update
+if [ ! -f "$CLAUDE_WRAPPER" ] || ! is_script "$CLAUDE_WRAPPER"; then
+    echo "[cl] Wrapper missing or overwritten by auto-update. Fixing..."
+
+    # The auto-update drops a raw native binary at the wrapper path — use it
+    if [ -f "$CLAUDE_WRAPPER" ] && ! is_script "$CLAUDE_WRAPPER"; then
+        mv "$CLAUDE_WRAPPER" "$CLAUDE_WRAPPER.update-tmp"
+        rebuild "$CLAUDE_WRAPPER.update-tmp"
+        rm -f "$CLAUDE_WRAPPER.update-tmp"
+    fi
+
+    install_proot_wrapper
+    echo "[cl] Fixed. Launching Claude Code..."
+fi
+
+# Check claude-bin exists and is executable
+if [ ! -x "$CLAUDE_BIN" ]; then
+    echo "[cl] claude-bin missing. Downloading latest..."
+    if [ ! -d "$LOADER_DIR" ]; then
+        echo "[cl] ERROR: bun-termux-loader not found at $LOADER_DIR" >&2
+        exit 1
+    fi
+    VERSION=$(curl -fsSL "$GCS_BUCKET/latest")
+    FRESH="${TMPDIR:-$PREFIX/tmp}/claude-fresh"
+    curl -fsSL -o "$FRESH" "$GCS_BUCKET/$VERSION/linux-arm64/claude"
+    chmod +x "$FRESH"
+    rebuild "$FRESH"
+    rm -f "$FRESH"
+    install_proot_wrapper
+    echo "[cl] Built Claude Code $VERSION. Launching..."
+fi
+
+exec claude "$@"

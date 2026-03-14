@@ -135,9 +135,28 @@ claude -p "run echo hello"
 # Should execute the command and show output
 ```
 
+## Usage
+
+Always launch Claude Code via `cl` instead of `claude` directly:
+
+```bash
+cl              # interactive mode
+cl -p "hello"   # print mode
+cl --version    # version check
+```
+
+`cl` automatically detects if the wrapper has been overwritten by an auto-update, rebuilds it, clears the cache, and launches Claude — so you never have to think about it.
+
+Install it to `~/.local/bin/cl`:
+
+```bash
+cp wrappers/cl ~/.local/bin/cl
+chmod +x ~/.local/bin/cl
+```
+
 ## Updating
 
-Claude Code auto-updates can replace the bun-termux-loader wrapper with a raw native binary. Install this rebuild script:
+Claude Code auto-updates can replace the bun-termux-loader wrapper with a raw native binary. If you use `cl`, this is handled automatically. For manual rebuilds, install this script:
 
 ```bash
 cat > ~/.local/bin/rebuild-claude-wrapper << 'EOF'
@@ -212,9 +231,10 @@ The `--bind=$PREFIX/bin/bash:/bin/sh` is also needed because Claude Code's hooks
 |------|---------|
 | [`install.sh`](install.sh) | Patched installer that uses grun for the initial `claude install` step |
 | [`fix-env.js`](fix-env.js) | Preload script that fixes Bun's empty `process.env` on Termux |
+| [`wrappers/cl`](wrappers/cl) | Self-healing launcher — auto-detects and fixes broken wrappers |
 | [`wrappers/claude`](wrappers/claude) | proot wrapper for the Claude binary |
 | [`wrappers/bun`](wrappers/bun) | grun + env fix wrapper for standalone Bun |
-| [`wrappers/rebuild-claude-wrapper`](wrappers/rebuild-claude-wrapper) | Rebuild script for after auto-updates |
+| [`wrappers/rebuild-claude-wrapper`](wrappers/rebuild-claude-wrapper) | Manual rebuild script for after auto-updates |
 
 ## Credits
 
