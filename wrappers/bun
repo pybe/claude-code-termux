@@ -1,0 +1,17 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Bun wrapper for Termux - uses grun + env fix preload
+# Filters harmless Android /data/data/ AccessDenied stderr noise
+CACHE_DIR="${TMPDIR:-/data/data/com.termux/files/usr/tmp}/bun-termux-cache"
+BUN_BIN=$(ls "$CACHE_DIR"/bun-* 2>/dev/null | head -1)
+if [ -z "$BUN_BIN" ]; then
+    echo "Error: No cached bun in $CACHE_DIR" >&2
+    echo "Run claude once first to populate the cache." >&2
+    exit 1
+fi
+FIX_ENV="$HOME/.local/share/bun-termux/fix-env.js"
+if [ -f "$FIX_ENV" ]; then
+    ARGS=(--preload "$FIX_ENV" "$@")
+else
+    ARGS=("$@")
+fi
+grun "$BUN_BIN" "${ARGS[@]}" 2> >(grep -v "Cannot read directory.*AccessDenied" >&2)

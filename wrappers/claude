@@ -1,0 +1,4 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Claude Code wrapper - proot redirects /tmp and /bin/sh for Termux compatibility
+# The actual binary is at ~/.local/bin/claude-bin (built by bun-termux-loader)
+exec proot --bind=$PREFIX/tmp:/tmp --bind=$PREFIX/bin/bash:/bin/sh ~/.local/bin/claude-bin "$@"
