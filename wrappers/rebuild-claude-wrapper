@@ -1,11 +1,11 @@
 #!/bin/bash
-# Rebuild Claude Code bun-termux-loader wrapper after auto-updates
-# Auto-updates replace the wrapper with a raw native binary — this rebuilds it
+# Rebuild Claude Code bun-termux-loader wrapper after updates
+# Auto-updates replace the wrapped binary with a raw native binary — this rebuilds it
 set -e
 
 VERSIONS_DIR="$HOME/.local/share/claude/versions"
 LOADER_DIR="$HOME/bun-termux-loader"
-TARGET="$HOME/.local/bin/claude-bin"
+TARGET="$HOME/.local/bin/claude"
 
 LATEST=$(ls -t "$VERSIONS_DIR"/ 2>/dev/null | head -1)
 
@@ -17,4 +17,4 @@ fi
 echo "Rebuilding wrapper for Claude $LATEST..."
 cd "$LOADER_DIR"
 python3 build.py "$VERSIONS_DIR/$LATEST" "$TARGET"
-echo "Done. $(claude --version 2>&1)"
+echo "Done. claude --version: $(claude --version 2>&1)"

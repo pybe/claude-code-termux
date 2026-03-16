@@ -1,0 +1,14 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Claude Code Termux wrapper — proot redirects /tmp and /bin/sh for Android
+#
+# Why proot:
+#   Claude Code hardcodes /tmp for sandbox directories (unwritable on Android)
+#   Claude Code hooks spawn processes via /bin/sh (doesn't exist on Termux)
+#
+# Why this is a separate wrapper (not the 'claude' binary itself):
+#   Hooks and sub-processes inside Claude call 'claude' directly.
+#   If 'claude' were this proot wrapper, those calls would nest proot
+#   (ptrace inside ptrace), which deadlocks on Android.
+#   Keeping 'claude' as the real binary avoids this.
+
+exec proot --bind=$PREFIX/tmp:/tmp --bind=$PREFIX/bin/bash:/bin/sh ~/.local/bin/claude "$@"
